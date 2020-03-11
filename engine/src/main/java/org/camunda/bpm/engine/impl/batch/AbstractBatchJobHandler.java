@@ -17,6 +17,7 @@
 package org.camunda.bpm.engine.impl.batch;
 
 import org.camunda.bpm.engine.impl.context.Context;
+import org.camunda.bpm.engine.impl.db.DbEntity;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.jobexecutor.JobDeclaration;
 import org.camunda.bpm.engine.impl.json.JsonObjectConverter;
@@ -31,7 +32,10 @@ import com.google.gson.JsonElement;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Common methods for batch job handlers based on list of ids, providing serialization, configuration instantiation, etc.
@@ -169,4 +173,13 @@ public abstract class AbstractBatchJobHandler<T extends BatchConfiguration> impl
   }
 
   protected abstract JsonObjectConverter<T> getJsonConverterInstance();
+
+  protected <S extends DbEntity> Map<String, List<String>> groupByDeploymentId(List<String> ids, Function<String, S> idMapperFunction,
+      Function<? super S, ? extends String> deploymentIdFunction, Function<? super S, ? extends String> entityIdFunction) {
+    return ids.stream().map(idMapperFunction)
+        .filter(Objects::nonNull)
+        .filter(e -> deploymentIdFunction.apply(e) != null)
+        .collect(Collectors.groupingBy(deploymentIdFunction,
+            Collectors.mapping(entityIdFunction, Collectors.toList())));
+  }
 }

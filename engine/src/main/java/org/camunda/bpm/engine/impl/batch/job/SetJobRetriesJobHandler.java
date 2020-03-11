@@ -32,8 +32,6 @@ import org.camunda.bpm.engine.impl.persistence.entity.MessageEntity;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 
 /**
@@ -89,9 +87,6 @@ public class SetJobRetriesJobHandler extends AbstractBatchJobHandler<SetRetriesB
       SetRetriesBatchConfiguration configuration) {
     // fetch jobs by id and group them by deployment id (except jobs without deployment id)
     JobManager jobManager = commandContext.getJobManager();
-    return processIds.stream().map(jobManager::findJobById)
-        .filter(Objects::nonNull).filter(job -> job.getDeploymentId() != null)
-        .collect(Collectors.groupingBy(JobEntity::getDeploymentId,
-            Collectors.mapping(JobEntity::getId, Collectors.toList())));
+    return groupByDeploymentId(processIds, jobManager::findJobById, JobEntity::getDeploymentId, JobEntity::getId);
   }
 }
