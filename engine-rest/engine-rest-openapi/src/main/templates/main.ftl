@@ -32,7 +32,7 @@
   ],
   "tags": [
     {"name": "Deployment"},
-    {"name": "Engine"}
+    {"name": "Engine"},
     {"name": "Process instance"},
     {"name": "Schema Log"}
   ],
