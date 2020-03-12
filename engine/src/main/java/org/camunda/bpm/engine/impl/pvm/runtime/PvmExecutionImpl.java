@@ -238,13 +238,13 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
 
     initialize();
 
+    fireHistoricProcessStartEvent();
+
     if (variables != null) {
       setVariables(variables);
     }
 
     initializeTimerDeclarations();
-
-    fireHistoricProcessStartEvent();
 
     performOperation(PvmAtomicOperation.PROCESS_START);
   }
@@ -850,7 +850,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     this.skipCustomListeners = skipCustomListeners;
     this.skipIoMapping = skipIoMappings;
 
-    ExecutionStartContext executionStartContext = new ExecutionStartContext(false);
+    ExecutionStartContext executionStartContext = new ExecutionStartContext();
 
     InstantiationStack instantiationStack = new InstantiationStack(new LinkedList<>(activityStack));
     executionStartContext.setInstantiationStack(instantiationStack);
@@ -894,7 +894,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     this.isEnded = false;
 
     if (!activityStack.isEmpty()) {
-      ExecutionStartContext executionStartContext = new ExecutionStartContext(false);
+      ExecutionStartContext executionStartContext = new ExecutionStartContext();
 
       InstantiationStack instantiationStack = new InstantiationStack(activityStack, targetActivity, targetTransition);
       executionStartContext.setInstantiationStack(instantiationStack);
@@ -1036,6 +1036,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
 
   public abstract List<? extends PvmExecutionImpl> getExecutionsAsCopy();
 
+  @Override
   public List<? extends PvmExecutionImpl> getNonEventScopeExecutions() {
     List<? extends PvmExecutionImpl> children = getExecutions();
     List<PvmExecutionImpl> result = new ArrayList<>();
@@ -1306,6 +1307,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     }
   }
 
+  @Override
   public boolean hasChildren() {
     return !getExecutions().isEmpty();
   }
@@ -1537,6 +1539,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     new ExecutionWalker(this)
       .addPreVisitor(scopeExecutionCollector)
       .walkWhile(new ReferenceWalker.WalkCondition<PvmExecutionImpl>() {
+        @Override
         public boolean isFulfilled(PvmExecutionImpl element) {
           return element == null || mapping.containsValue(element);
         }
@@ -1548,6 +1551,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     new FlowScopeWalker(currentScope)
       .addPreVisitor(scopeCollector)
       .walkWhile(new ReferenceWalker.WalkCondition<ScopeImpl>() {
+        @Override
         public boolean isFulfilled(ScopeImpl element) {
           return element == null || mapping.containsKey(element);
         }
@@ -1560,6 +1564,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     ScopeImpl topMostScope = scopes.get(scopes.size() - 1);
     new FlowScopeWalker(topMostScope.getFlowScope())
       .addPreVisitor(new TreeVisitor<ScopeImpl>() {
+        @Override
         public void visit(ScopeImpl obj) {
           scopes.add(obj);
           PvmExecutionImpl priorMappingExecution = mapping.get(obj);
@@ -1614,6 +1619,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
   /**
    * {@inheritDoc}
    */
+  @Override
   public void setVariable(String variableName, Object value, String targetActivityId) {
     String activityId = getActivityId();
     if (activityId != null && activityId.equals(targetActivityId)) {
@@ -1742,6 +1748,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     this.isActive = isActive;
   }
 
+  @Override
   public void setEnded(boolean isEnded) {
     this.isEnded = isEnded;
   }
@@ -2166,6 +2173,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     return createIncident(incidentType, configuration, null);
   }
 
+  @Override
   public Incident createIncident(String incidentType, String configuration, String message) {
     IncidentContext incidentContext = new IncidentContext();
 

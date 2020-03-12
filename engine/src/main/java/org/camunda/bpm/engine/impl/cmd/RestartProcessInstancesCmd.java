@@ -22,6 +22,7 @@ import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.camunda.bpm.engine.BadUserRequestException;
 import org.camunda.bpm.engine.HistoryService;
@@ -39,7 +40,6 @@ import org.camunda.bpm.engine.impl.ProcessInstantiationBuilderImpl;
 import org.camunda.bpm.engine.impl.RestartProcessInstanceBuilderImpl;
 import org.camunda.bpm.engine.impl.context.Context;
 import org.camunda.bpm.engine.impl.context.ProcessApplicationContextUtil;
-import org.camunda.bpm.engine.impl.interceptor.Command;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.interceptor.CommandExecutor;
 import org.camunda.bpm.engine.impl.persistence.entity.ProcessDefinitionEntity;
@@ -197,20 +197,20 @@ public class RestartProcessInstancesCmd extends AbstractRestartProcessInstanceCm
     HistoryService historyService = commandContext.getProcessEngineConfiguration()
         .getHistoryService();
 
-    HistoricActivityInstance startActivityInstance = resolveStartActivityInstance(processInstance);
-
     HistoricDetailQueryImpl query =
         (HistoricDetailQueryImpl) historyService.createHistoricDetailQuery()
             .variableUpdates()
-            .executionId(processInstance.getId())
-            .activityInstanceId(startActivityInstance.getId());
+            .executionId(processInstance.getId());
 
-    List<HistoricDetail> historicDetails = query
+    List<HistoricDetail> collect = query
         .sequenceCounter(1)
-        .list();
+        .list()
+        .stream()
+        .filter(detail -> (detail.getActivityInstanceId() == null))
+        .collect(Collectors.toList());
 
     VariableMap variables = new VariableMapImpl();
-    for (HistoricDetail detail : historicDetails) {
+    for (HistoricDetail detail : collect) {
       HistoricVariableUpdate variableUpdate = (HistoricVariableUpdate) detail;
       variables.putValueTyped(variableUpdate.getVariableName(), variableUpdate.getTypedValue());
     }

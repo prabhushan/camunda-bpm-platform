@@ -623,7 +623,7 @@ public class RestartProcessInstanceSyncTest {
   }
 
   @Test
-  public void shouldNotSetInitialVariablesIfThereIsNoUniqueStartActivity() {
+  public void shouldSetInitialVariablesIfThereIsNoUniqueStartActivity() {
     // given
     ProcessDefinition processDefinition = testRule.deployAndGetDefinition(ProcessModels.TWO_TASKS_PROCESS);
 
@@ -645,7 +645,9 @@ public class RestartProcessInstanceSyncTest {
     // then
     ProcessInstance restartedProcessInstance = runtimeService.createProcessInstanceQuery().processDefinitionId(processDefinition.getId()).singleResult();
     List<VariableInstance> variables = runtimeService.createVariableInstanceQuery().processInstanceIdIn(restartedProcessInstance.getId()).list();
-    Assert.assertEquals(0, variables.size());
+    assertEquals(1, variables.size());
+    assertEquals("foo", variables.get(0).getName());
+    assertEquals("bar", variables.get(0).getValue());
   }
 
   @Test

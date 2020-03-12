@@ -56,6 +56,7 @@ import org.camunda.bpm.engine.exception.NullValueException;
 import org.camunda.bpm.engine.history.HistoricActivityInstance;
 import org.camunda.bpm.engine.history.HistoricProcessInstance;
 import org.camunda.bpm.engine.history.HistoricProcessInstanceQuery;
+import org.camunda.bpm.engine.history.HistoricVariableInstance;
 import org.camunda.bpm.engine.impl.history.HistoryLevel;
 import org.camunda.bpm.engine.impl.history.event.HistoricProcessInstanceEventEntity;
 import org.camunda.bpm.engine.impl.util.ClockUtil;
@@ -70,6 +71,7 @@ import org.camunda.bpm.engine.test.api.runtime.migration.models.CallActivityMode
 import org.camunda.bpm.engine.test.api.runtime.migration.models.ProcessModels;
 import org.camunda.bpm.engine.test.util.ProcessEngineTestRule;
 import org.camunda.bpm.engine.test.util.ProvidedProcessEngineRule;
+import org.camunda.bpm.engine.variable.Variables;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.junit.Assert;
@@ -1691,6 +1693,21 @@ public class HistoricProcessInstanceTest {
     } catch(ProcessEngineException expected) {
       // then Exception is expected
     }
+  }
+
+  @Test
+  @Deployment(resources = {"org/camunda/bpm/engine/test/history/oneAsyncTaskProcess.bpmn20.xml"})
+  public void testShouldStoreHistoricProcessInstanceVariableOnAsyncBefore() {
+    // given definition with asyncBefore startEvent
+
+    // when trigger process instance with variables
+    runtimeService.startProcessInstanceByKey("oneTaskProcess", Variables.createVariables().putValue("foo", "bar"));
+
+    // then
+    HistoricVariableInstance historicVariable = historyService.createHistoricVariableInstanceQuery().variableName("foo").singleResult();
+    assertNotNull(historicVariable);
+    assertEquals("foo", historicVariable.getName());
+    assertEquals("bar", historicVariable.getValue());
   }
 
   protected void deployment(String... resources) {
