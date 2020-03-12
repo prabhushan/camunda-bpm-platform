@@ -202,7 +202,7 @@ public class RestartProcessInstancesCmd extends AbstractRestartProcessInstanceCm
             .variableUpdates()
             .executionId(processInstance.getId());
 
-    List<HistoricDetail> collect = query
+    List<HistoricDetail> historicDetails = query
         .sequenceCounter(1)
         .list()
         .stream()
@@ -210,7 +210,7 @@ public class RestartProcessInstancesCmd extends AbstractRestartProcessInstanceCm
         .collect(Collectors.toList());
 
     VariableMap variables = new VariableMapImpl();
-    for (HistoricDetail detail : collect) {
+    for (HistoricDetail detail : historicDetails) {
       HistoricVariableUpdate variableUpdate = (HistoricVariableUpdate) detail;
       variables.putValueTyped(variableUpdate.getVariableName(), variableUpdate.getTypedValue());
     }
