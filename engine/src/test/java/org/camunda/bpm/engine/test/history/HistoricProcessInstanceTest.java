@@ -1706,8 +1706,46 @@ public class HistoricProcessInstanceTest {
     // then
     HistoricVariableInstance historicVariable = historyService.createHistoricVariableInstanceQuery().variableName("foo").singleResult();
     assertNotNull(historicVariable);
-    assertEquals("foo", historicVariable.getName());
     assertEquals("bar", historicVariable.getValue());
+  }
+
+  @Test
+  @Deployment(resources = {"org/camunda/bpm/engine/test/history/oneAsyncTaskProcess.bpmn20.xml"})
+  public void testShouldStoreInitialHistoricProcessInstanceVariableOnAsyncBefore() {
+    // given definition with asyncBefore startEvent
+    
+    ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("oneTaskProcess", Variables.createVariables().putValue("foo", "bar"));
+    
+    runtimeService.setVariable(processInstance.getId(), "goo", "car");
+    
+    // when
+    executeJob(managementService.createJobQuery().singleResult());
+    
+    // then
+    HistoricVariableInstance historicVariable = historyService.createHistoricVariableInstanceQuery().variableName("foo").singleResult();
+    assertNotNull(historicVariable);
+    assertEquals("bar", historicVariable.getValue());
+    historicVariable = historyService.createHistoricVariableInstanceQuery().variableName("goo").singleResult();
+    assertNotNull(historicVariable);
+    assertEquals("car", historicVariable.getValue());
+  }
+
+  @Test
+  @Deployment(resources = {"org/camunda/bpm/engine/test/history/oneAsyncTaskProcess.bpmn20.xml"})
+  public void testShouldSetVariableBeforeAsyncBefore() {
+    // given definition with asyncBefore startEvent
+
+    ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("oneTaskProcess");
+
+    runtimeService.setVariable(processInstance.getId(), "goo", "car");
+
+    // when
+    executeJob(managementService.createJobQuery().singleResult());
+
+    // then
+    HistoricVariableInstance historicVariable = historyService.createHistoricVariableInstanceQuery().variableName("goo").singleResult();
+    assertNotNull(historicVariable);
+    assertEquals("car", historicVariable.getValue());
   }
 
   protected void deployment(String... resources) {
@@ -1717,4 +1755,18 @@ public class HistoricProcessInstanceTest {
   protected void deployment(BpmnModelInstance... modelInstances) {
     testHelper.deploy(modelInstances);
   }
+
+  protected void executeJob(Job job) {
+    while (job != null && job.getRetries() > 0) {
+      try {
+        managementService.executeJob(job.getId());
+      }
+      catch (Exception e) {
+        // ignore
+      }
+
+      job = managementService.createJobQuery().jobId(job.getId()).singleResult();
+    }
+  }
+
 }
