@@ -16,12 +16,17 @@
  */
 package org.camunda.bpm.engine.impl;
 
+import java.util.Arrays;
 import java.util.List;
+
 import org.camunda.bpm.engine.batch.Batch;
 import org.camunda.bpm.engine.impl.batch.AbstractBatchJobHandler;
+import org.camunda.bpm.engine.impl.batch.BatchEntity;
 import org.camunda.bpm.engine.impl.batch.BatchJobConfiguration;
 import org.camunda.bpm.engine.impl.batch.BatchJobContext;
 import org.camunda.bpm.engine.impl.batch.BatchJobDeclaration;
+import org.camunda.bpm.engine.impl.batch.BatchConfiguration.DeploymentMappingInfo;
+import org.camunda.bpm.engine.impl.context.Context;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.jobexecutor.JobDeclaration;
 import org.camunda.bpm.engine.impl.persistence.entity.ByteArrayEntity;
@@ -87,6 +92,20 @@ public class RestartProcessInstancesJobHandler extends AbstractBatchJobHandler<R
 
     commandContext.getByteArrayManager().delete(configurationEntity);
 
+  }
+
+  @Override
+  protected boolean doCreateJobs(BatchEntity batch, RestartProcessInstancesBatchConfiguration configuration) {
+    List<DeploymentMappingInfo> idMappings = configuration.getIdMappings();
+    if (idMappings == null || idMappings.isEmpty()) {
+      // create mapping for legacy seed jobs
+      String deploymentId = Context.getCommandContext().getProcessEngineConfiguration()
+          .getDeploymentCache().findDeployedProcessDefinitionById(configuration.getProcessDefinitionId())
+          .getDeploymentId();
+      idMappings = Arrays.asList(new DeploymentMappingInfo(deploymentId, configuration.getIds().size()));
+      configuration.setIdMappings(idMappings);
+    }
+    return super.doCreateJobs(batch, configuration);
   }
 
   @Override

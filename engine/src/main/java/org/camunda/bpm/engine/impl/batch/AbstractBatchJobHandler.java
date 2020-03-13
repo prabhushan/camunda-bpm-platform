@@ -48,12 +48,17 @@ public abstract class AbstractBatchJobHandler<T extends BatchConfiguration> impl
   @Override
   public boolean createJobs(BatchEntity batch) {
     T configuration = readConfiguration(batch.getConfigurationBytes());
+    return doCreateJobs(batch, configuration);
+  }
+
+  protected boolean doCreateJobs(BatchEntity batch, T configuration) {
+    String deploymentId = null;
 
     List<DeploymentMappingInfo> idMappings = configuration.getIdMappings();
     boolean deploymentAware = idMappings != null && !idMappings.isEmpty();
 
     List<String> ids = configuration.getIds();
-    String deploymentId = null;
+
     if (deploymentAware) {
       DeploymentMappingInfo mappingToProcess = idMappings.get(0);
       ids = mappingToProcess.getIds(ids);

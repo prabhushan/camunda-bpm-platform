@@ -16,13 +16,18 @@
  */
 package org.camunda.bpm.engine.impl.batch.deletion;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.batch.Batch;
 import org.camunda.bpm.engine.impl.batch.AbstractBatchJobHandler;
+import org.camunda.bpm.engine.impl.batch.BatchEntity;
 import org.camunda.bpm.engine.impl.batch.BatchJobConfiguration;
 import org.camunda.bpm.engine.impl.batch.BatchJobContext;
 import org.camunda.bpm.engine.impl.batch.BatchJobDeclaration;
+import org.camunda.bpm.engine.impl.cmd.batch.DeleteProcessInstanceBatchCmd;
+import org.camunda.bpm.engine.impl.context.Context;
+import org.camunda.bpm.engine.impl.batch.BatchConfiguration.DeploymentMappingInfo;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.jobexecutor.JobDeclaration;
 import org.camunda.bpm.engine.impl.persistence.entity.ByteArrayEntity;
@@ -81,4 +86,17 @@ public class DeleteProcessInstancesJobHandler extends AbstractBatchJobHandler<De
     commandContext.getByteArrayManager().delete(configurationEntity);
   }
 
+  @Override
+  protected boolean doCreateJobs(BatchEntity batch, DeleteProcessInstanceBatchConfiguration configuration) {
+    List<DeploymentMappingInfo> idMappings = configuration.getIdMappings();
+    if (idMappings == null || idMappings.isEmpty()) {
+      // create mapping for legacy seed jobs
+      List<String> ids = new ArrayList<>();
+      idMappings = new ArrayList<>();
+      DeleteProcessInstanceBatchCmd.createDeploymentMappings(Context.getCommandContext(), idMappings, configuration.getIds(), ids);
+      configuration.setIds(ids);
+      configuration.setIdMappings(idMappings);
+    }
+    return super.doCreateJobs(batch, configuration);
+  }
 }

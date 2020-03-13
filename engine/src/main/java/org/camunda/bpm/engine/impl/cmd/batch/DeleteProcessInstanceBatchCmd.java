@@ -19,6 +19,7 @@ package org.camunda.bpm.engine.impl.cmd.batch;
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotEmpty;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -106,22 +107,26 @@ public class DeleteProcessInstanceBatchCmd implements Command<Batch> {
     }
 
     List<String> ids = new ArrayList<>();
-    commandContext.getDeploymentManager().findDeploymentIdsByProcessInstances(new ArrayList<>(collectedProcessInstanceIds))
-      .forEach(id -> {
-        DeploymentMappingInfo.addIds(getInstancesForDeploymentId(commandContext, collectedProcessInstanceIds, id),
-            ids, mappings, id);
-      });
-    collectedProcessInstanceIds.removeAll(ids);
-    if (!collectedProcessInstanceIds.isEmpty()) {
-      DeploymentMappingInfo.addIds(collectedProcessInstanceIds, ids, mappings, null);
-    }
+    createDeploymentMappings(commandContext, mappings, collectedProcessInstanceIds, ids);
 
     return ids;
   }
 
-  protected List<String> getInstancesForDeploymentId(CommandContext commandContext, Set<String> processIds, String deploymentId) {
+  public static void createDeploymentMappings(CommandContext commandContext, List<DeploymentMappingInfo> mappings, Collection<String> sourceIds, List<String> targetIds) {
+    commandContext.getDeploymentManager().findDeploymentIdsByProcessInstances(new ArrayList<>(sourceIds))
+      .forEach(id -> {
+        DeploymentMappingInfo.addIds(getInstancesForDeploymentId(commandContext, sourceIds, id),
+            targetIds, mappings, id);
+      });
+    sourceIds.removeAll(targetIds);
+    if (!sourceIds.isEmpty()) {
+      DeploymentMappingInfo.addIds(sourceIds, targetIds, mappings, null);
+    }
+  }
+
+  protected static List<String> getInstancesForDeploymentId(CommandContext commandContext, Collection<String> processIds, String deploymentId) {
     final ProcessInstanceQueryImpl processInstanceQueryToBeProcess = new ProcessInstanceQueryImpl();
-    processInstanceQueryToBeProcess.processInstanceIds(processIds).deploymentId(deploymentId);
+    processInstanceQueryToBeProcess.processInstanceIds(new HashSet<>(processIds)).deploymentId(deploymentId);
     return commandContext.getExecutionManager().findProcessInstancesIdsByQueryCriteria(processInstanceQueryToBeProcess);
   }
 
