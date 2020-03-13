@@ -1,6 +1,6 @@
 {
   <@lib.endpointInfo
-      id = "getSchemaLogs"
+      id = "getSchemaLog"
       tag = "Schema Log"
       desc = "Queries for schema log entries that fulfill given parameters." />
 
