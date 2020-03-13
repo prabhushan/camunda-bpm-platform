@@ -4,6 +4,11 @@
       tag = "Schema Log"
       desc = "Queries for schema log entries that fulfill given parameters." />
 
+  "parameters" : [
+    <#assign last = true >
+    <#include "/lib/commons/pagination-params.ftl" >
+  ],
+  
   <@lib.requestBody
       mediaType = "application/json"
       dto = "SchemaLogQueryDto"
@@ -17,10 +22,6 @@
                          }
                    }'] />
 
-  "parameters" : [
-    <#assign last = true >
-    <#include "/lib/commons/pagination-params.ftl" >
-  ],
   "responses" : {
     <@lib.response
         code = "200"
