@@ -30,7 +30,7 @@ public class SetExternalTasksRetriesCmd extends AbstractSetExternalTaskRetriesCm
 
   @Override
   public Void execute(CommandContext commandContext) {
-    List<String> collectedIds = collectExternalTaskIds();
+    List<String> collectedIds = collectExternalTaskIds(null);
     EnsureUtil.ensureNotEmpty(BadUserRequestException.class,
         "externalTaskIds", collectedIds);
 

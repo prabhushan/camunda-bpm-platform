@@ -16,23 +16,29 @@
  */
 package org.camunda.bpm.engine.impl.cmd;
 
-import org.camunda.bpm.engine.BadUserRequestException;
-import org.camunda.bpm.engine.authorization.BatchPermissions;
-import org.camunda.bpm.engine.batch.Batch;
-import org.camunda.bpm.engine.history.UserOperationLogEntry;
-import org.camunda.bpm.engine.impl.batch.builder.BatchBuilder;
-import org.camunda.bpm.engine.impl.batch.BatchConfiguration;
-import org.camunda.bpm.engine.impl.batch.SetRetriesBatchConfiguration;
-import org.camunda.bpm.engine.impl.interceptor.Command;
-import org.camunda.bpm.engine.impl.interceptor.CommandContext;
-import org.camunda.bpm.engine.impl.persistence.entity.PropertyChange;
-import org.camunda.bpm.engine.impl.util.EnsureUtil;
+import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotEmpty;
+import org.camunda.bpm.engine.BadUserRequestException;
+import org.camunda.bpm.engine.authorization.BatchPermissions;
+import org.camunda.bpm.engine.batch.Batch;
+import org.camunda.bpm.engine.history.UserOperationLogEntry;
+import org.camunda.bpm.engine.impl.batch.BatchConfiguration;
+import org.camunda.bpm.engine.impl.batch.BatchConfiguration.DeploymentMappingInfo;
+import org.camunda.bpm.engine.impl.batch.SetRetriesBatchConfiguration;
+import org.camunda.bpm.engine.impl.batch.builder.BatchBuilder;
+import org.camunda.bpm.engine.impl.db.DbEntity;
+import org.camunda.bpm.engine.impl.interceptor.Command;
+import org.camunda.bpm.engine.impl.interceptor.CommandContext;
+import org.camunda.bpm.engine.impl.persistence.entity.JobEntity;
+import org.camunda.bpm.engine.impl.persistence.entity.PropertyChange;
+import org.camunda.bpm.engine.impl.util.EnsureUtil;
 
 /**
  * @author Askar Akhmerov
@@ -43,22 +49,40 @@ public abstract class AbstractSetJobsRetriesBatchCmd implements Command<Batch> {
 
   @Override
   public Batch execute(CommandContext commandContext) {
-    Collection<String> collectedInstanceIds = collectJobIds(commandContext);
+    List<String> collectedJobIds = collectJobIds(commandContext);
+    List<DeploymentMappingInfo> mappings = groupByDeploymentId(collectedJobIds, commandContext.getJobManager()::findJobById, JobEntity::getDeploymentId, JobEntity::getId)
+      .entrySet().stream()
+      .map(e -> new DeploymentMappingInfo(e.getKey(), e.getValue().size()))
+      .collect(Collectors.toList());
 
-    ensureNotEmpty(BadUserRequestException.class, "jobIds", collectedInstanceIds);
+    ensureNotEmpty(BadUserRequestException.class, "jobIds", collectedJobIds);
     EnsureUtil.ensureGreaterThanOrEqual("Retries count", retries, 0);
 
     return new BatchBuilder(commandContext)
-        .config(getConfiguration(collectedInstanceIds))
+        .config(getConfiguration(collectedJobIds, mappings))
         .type(Batch.TYPE_SET_JOB_RETRIES)
         .permission(BatchPermissions.CREATE_BATCH_SET_JOB_RETRIES)
         .operationLogHandler(this::writeUserOperationLog)
         .build();
   }
 
+  protected <S extends DbEntity> Map<String, List<String>> groupByDeploymentId(List<String> ids, Function<String, S> idMapperFunction,
+      Function<? super S, ? extends String> deploymentIdFunction, Function<? super S, ? extends String> entityIdFunction) {
+    Function<String, String> deploymentIdFunctionNullSafe = id -> {
+      S entity = idMapperFunction.apply(id);
+      if (entity == null || deploymentIdFunction.apply(entity) == null) {
+        return DeploymentMappingInfo.NULL_ID;
+      }
+      return deploymentIdFunction.apply(entity);
+    };
+    return ids.stream()
+        .collect(Collectors.groupingBy(deploymentIdFunctionNullSafe,
+            Collectors.mapping(Function.identity(), Collectors.toList())));
+  }
+
   protected void writeUserOperationLog(CommandContext commandContext, int numInstances) {
 
-    List<PropertyChange> propertyChanges = new ArrayList<PropertyChange>();
+    List<PropertyChange> propertyChanges = new ArrayList<>();
     propertyChanges.add(new PropertyChange("nrOfInstances",
         null,
         numInstances));
@@ -77,8 +101,8 @@ public abstract class AbstractSetJobsRetriesBatchCmd implements Command<Batch> {
 
   protected abstract List<String> collectJobIds(CommandContext commandContext);
 
-  public BatchConfiguration getConfiguration(Collection<String> instanceIds) {
-    return new SetRetriesBatchConfiguration(new ArrayList<>(instanceIds), retries);
+  public BatchConfiguration getConfiguration(Collection<String> instanceIds, List<DeploymentMappingInfo> mappings) {
+    return new SetRetriesBatchConfiguration(new ArrayList<>(instanceIds), mappings, retries);
   }
 
 }

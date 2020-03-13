@@ -17,15 +17,15 @@
 package org.camunda.bpm.engine.impl;
 
 import org.camunda.bpm.engine.history.HistoricProcessInstanceQuery;
-import org.camunda.bpm.engine.impl.batch.BatchConfiguration;
-import org.camunda.bpm.engine.impl.batch.BatchEntity;
 import org.camunda.bpm.engine.impl.cmd.AbstractSetJobsRetriesBatchCmd;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.runtime.Job;
 import org.camunda.bpm.engine.runtime.ProcessInstanceQuery;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Askar Akhmerov
@@ -47,8 +47,8 @@ public class SetJobsRetriesByProcessBatchCmd extends AbstractSetJobsRetriesBatch
   }
 
   protected List<String> collectJobIds(CommandContext commandContext) {
-    List<String> collectedJobIds = new ArrayList<String>();
-    List<String> collectedProcessInstanceIds = new ArrayList<String>();
+    Set<String> collectedJobIds = new HashSet<>();
+    Set<String> collectedProcessInstanceIds = new HashSet<>();
 
     if (query != null) {
       collectedProcessInstanceIds.addAll(((ProcessInstanceQueryImpl)query).listIds());
@@ -70,7 +70,7 @@ public class SetJobsRetriesByProcessBatchCmd extends AbstractSetJobsRetriesBatch
       }
     }
 
-    return collectedJobIds;
+    return new ArrayList<>(collectedJobIds);
   }
 
 }

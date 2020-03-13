@@ -16,10 +16,7 @@
  */
 package org.camunda.bpm.engine.impl.batch.externaltask;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-
 import org.camunda.bpm.engine.batch.Batch;
 import org.camunda.bpm.engine.impl.batch.AbstractBatchJobHandler;
 import org.camunda.bpm.engine.impl.batch.BatchJobConfiguration;
@@ -30,8 +27,6 @@ import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.jobexecutor.JobDeclaration;
 import org.camunda.bpm.engine.impl.persistence.entity.ByteArrayEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;
-import org.camunda.bpm.engine.impl.persistence.entity.ExternalTaskEntity;
-import org.camunda.bpm.engine.impl.persistence.entity.ExternalTaskManager;
 import org.camunda.bpm.engine.impl.persistence.entity.MessageEntity;
 
 public class SetExternalTaskRetriesJobHandler extends AbstractBatchJobHandler<SetRetriesBatchConfiguration> {
@@ -73,26 +68,13 @@ public class SetExternalTaskRetriesJobHandler extends AbstractBatchJobHandler<Se
   }
 
   @Override
-  protected SetRetriesBatchConfiguration createJobConfiguration(SetRetriesBatchConfiguration configuration,
-      List<String> processIdsForJob) {
-    return new SetRetriesBatchConfiguration(processIdsForJob, configuration.getRetries());
+  protected SetRetriesBatchConfiguration createJobConfiguration(SetRetriesBatchConfiguration configuration, List<String> processIdsForJob) {
+    return new SetRetriesBatchConfiguration(processIdsForJob, null, configuration.getRetries());
   }
 
   @Override
   protected SetExternalTaskRetriesBatchConfigurationJsonConverter getJsonConverterInstance() {
     return SetExternalTaskRetriesBatchConfigurationJsonConverter.INSTANCE;
-  }
-
-  @Override
-  protected Map<String, List<String>> getProcessIdsPerDeployment(CommandContext commandContext, List<String> processIds,
-      SetRetriesBatchConfiguration configuration) {
-    ExternalTaskManager externalTaskManager = commandContext.getExternalTaskManager();
-    return groupByDeploymentId(processIds, externalTaskManager::findExternalTaskById, e -> getDeploymentId(commandContext, e), ExternalTaskEntity::getId);
-  }
-
-  protected String getDeploymentId(CommandContext commandContext, ExternalTaskEntity externalTask) {
-    List<String> ids = commandContext.getDeploymentManager().findDeploymentIdsByProcessInstances(Arrays.asList(externalTask.getProcessInstanceId()));
-    return ids.isEmpty() ? null : ids.get(0);
   }
 
 }

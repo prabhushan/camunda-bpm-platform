@@ -16,6 +16,7 @@
  */
 package org.camunda.bpm.engine.impl.batch.job;
 
+import org.camunda.bpm.engine.impl.batch.BatchConfiguration.DeploymentMappingInfo;
 import org.camunda.bpm.engine.impl.batch.SetRetriesBatchConfiguration;
 import org.camunda.bpm.engine.impl.json.JsonObjectConverter;
 import org.camunda.bpm.engine.impl.util.JsonUtil;
@@ -30,19 +31,21 @@ public class SetJobRetriesBatchConfigurationJsonConverter extends JsonObjectConv
   public static final SetJobRetriesBatchConfigurationJsonConverter INSTANCE = new SetJobRetriesBatchConfigurationJsonConverter();
 
   public static final String JOB_IDS = "jobIds";
+  public static final String JOB_ID_MAPPINGS = "jobIdMappings";
   public static final String RETRIES = "retries";
 
   public JsonObject toJsonObject(SetRetriesBatchConfiguration configuration) {
     JsonObject json = JsonUtil.createObject();
 
     JsonUtil.addListField(json, JOB_IDS, configuration.getIds());
+    JsonUtil.addListField(json, JOB_ID_MAPPINGS, DeploymentMappingInfo.toStringList(configuration.getIdMappings()));
     JsonUtil.addField(json, RETRIES, configuration.getRetries());
     return json;
   }
 
   public SetRetriesBatchConfiguration toObject(JsonObject json) {
     SetRetriesBatchConfiguration configuration = new SetRetriesBatchConfiguration(
-        readJobIds(json),
+        readJobIds(json), readIdMappings(json),
         JsonUtil.getInt(json, RETRIES)
     );
 
@@ -51,5 +54,9 @@ public class SetJobRetriesBatchConfigurationJsonConverter extends JsonObjectConv
 
   protected List<String> readJobIds(JsonObject jsonObject) {
     return JsonUtil.asStringList(JsonUtil.getArray(jsonObject, JOB_IDS));
+  }
+
+  protected List<DeploymentMappingInfo> readIdMappings(JsonObject jsonObject) {
+    return DeploymentMappingInfo.fromStringList(JsonUtil.asStringList(JsonUtil.getArray(jsonObject, JOB_ID_MAPPINGS)));
   }
 }

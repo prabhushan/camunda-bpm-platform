@@ -30,10 +30,7 @@ import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.MessageEntity;
 import org.camunda.bpm.engine.migration.MigrationPlanExecutionBuilder;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Job handler for batch migration jobs. The batch migration job
@@ -58,20 +55,11 @@ public class MigrationBatchJobHandler extends AbstractBatchJobHandler<MigrationB
   @Override
   protected MigrationBatchConfiguration createJobConfiguration(MigrationBatchConfiguration configuration, List<String> processIdsForJob) {
     return new MigrationBatchConfiguration(
-        processIdsForJob,
+        processIdsForJob, null,
         configuration.getMigrationPlan(),
         configuration.isSkipCustomListeners(),
         configuration.isSkipIoMappings()
     );
-  }
-
-  @Override
-  protected Map<String, List<String>> getProcessIdsPerDeployment(CommandContext commandContext, List<String> processIds, MigrationBatchConfiguration configuration) {
-    String sourceProcessDefinitionId = configuration.getMigrationPlan().getSourceProcessDefinitionId();
-    String deploymentId = commandContext.getProcessEngineConfiguration()
-      .getDeploymentCache().findDeployedProcessDefinitionById(sourceProcessDefinitionId)
-      .getDeploymentId();
-    return Collections.singletonMap(deploymentId, new ArrayList<>(processIds));
   }
 
   @Override

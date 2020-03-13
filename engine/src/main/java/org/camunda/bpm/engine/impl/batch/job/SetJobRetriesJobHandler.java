@@ -26,12 +26,9 @@ import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.jobexecutor.JobDeclaration;
 import org.camunda.bpm.engine.impl.persistence.entity.ByteArrayEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;
-import org.camunda.bpm.engine.impl.persistence.entity.JobEntity;
-import org.camunda.bpm.engine.impl.persistence.entity.JobManager;
 import org.camunda.bpm.engine.impl.persistence.entity.MessageEntity;
 
 import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -56,7 +53,7 @@ public class SetJobRetriesJobHandler extends AbstractBatchJobHandler<SetRetriesB
 
   @Override
   protected SetRetriesBatchConfiguration createJobConfiguration(SetRetriesBatchConfiguration configuration, List<String> jobIds) {
-    return new SetRetriesBatchConfiguration(jobIds, configuration.getRetries());
+    return new SetRetriesBatchConfiguration(jobIds, null, configuration.getRetries());
   }
 
   @Override
@@ -82,11 +79,4 @@ public class SetJobRetriesJobHandler extends AbstractBatchJobHandler<SetRetriesB
     commandContext.getByteArrayManager().delete(configurationEntity);
   }
 
-  @Override
-  protected Map<String, List<String>> getProcessIdsPerDeployment(CommandContext commandContext, List<String> processIds,
-      SetRetriesBatchConfiguration configuration) {
-    // fetch jobs by id and group them by deployment id (except jobs without deployment id)
-    JobManager jobManager = commandContext.getJobManager();
-    return groupByDeploymentId(processIds, jobManager::findJobById, JobEntity::getDeploymentId, JobEntity::getId);
-  }
 }

@@ -298,7 +298,7 @@ public class SetExternalTasksRetriesTest extends AbstractAsyncOperationsTest {
 
     // when
     Batch batch = externalTaskService.setRetriesAsync(externalTaskIds, null, RETRIES);
-    executeSeedJob(batch);
+    executeSeedJobs(batch, 2);
     // then batch jobs with different deployment ids exist
     List<Job> batchJobs = managementService.createJobQuery().jobDefinitionId(batch.getBatchJobDefinitionId()).list();
     assertThat(batchJobs.size(), is(2));

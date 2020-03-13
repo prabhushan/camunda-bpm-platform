@@ -185,7 +185,7 @@ public class HistoryCleanupHistoricBatchTest {
 
     BatchEntity batch = (BatchEntity) createFailingMigrationBatch();
 
-    migrationHelper.executeSeedJob(batch);
+    migrationHelper.completeSeedJobs(batch);
 
     List<Job> list = managementService.createJobQuery().list();
     for (Job job : list) {
@@ -391,7 +391,7 @@ public class HistoryCleanupHistoricBatchTest {
     }
 
     for (Batch batch : list) {
-      migrationHelper.executeSeedJob(batch);
+      migrationHelper.completeSeedJobs(batch);
       migrationHelper.executeJobs(batch);
 
       ClockUtil.setCurrentTime(DateUtils.setMinutes(DateUtils.addDays(startDate, ++daysInThePast), random.nextInt(60)));

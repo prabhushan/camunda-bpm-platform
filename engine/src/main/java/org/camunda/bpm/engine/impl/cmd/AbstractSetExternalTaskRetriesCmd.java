@@ -19,19 +19,27 @@ package org.camunda.bpm.engine.impl.cmd;
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotContainsNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.camunda.bpm.engine.BadUserRequestException;
 import org.camunda.bpm.engine.history.UserOperationLogEntry;
 import org.camunda.bpm.engine.impl.ExternalTaskQueryImpl;
 import org.camunda.bpm.engine.impl.HistoricProcessInstanceQueryImpl;
 import org.camunda.bpm.engine.impl.ProcessInstanceQueryImpl;
+import org.camunda.bpm.engine.impl.batch.BatchConfiguration.DeploymentMappingInfo;
 import org.camunda.bpm.engine.impl.context.Context;
+import org.camunda.bpm.engine.impl.db.DbEntity;
 import org.camunda.bpm.engine.impl.interceptor.Command;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
+import org.camunda.bpm.engine.impl.persistence.entity.ExternalTaskEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.PropertyChange;
 
 public abstract class AbstractSetExternalTaskRetriesCmd<T> implements Command<T> {
@@ -64,9 +72,9 @@ public abstract class AbstractSetExternalTaskRetriesCmd<T> implements Command<T>
     return new ArrayList<>(collectedProcessInstanceIds);
   }
 
-  protected List<String> collectExternalTaskIds() {
+  protected List<String> collectExternalTaskIds(List<DeploymentMappingInfo> mappings) {
 
-    final Set<String> collectedIds = new HashSet<String>();
+    final Set<String> collectedIds = new HashSet<>();
 
     List<String> externalTaskIds = builder.getExternalTaskIds();
     if (externalTaskIds != null) {
@@ -79,10 +87,11 @@ public abstract class AbstractSetExternalTaskRetriesCmd<T> implements Command<T>
       collectedIds.addAll(externalTaskQuery.listIds());
     }
 
+    CommandContext commandContext = Context.getCommandContext();
     final List<String> collectedProcessInstanceIds = collectProcessInstanceIds();
     if (!collectedProcessInstanceIds.isEmpty()) {
 
-      Context.getCommandContext().runWithoutAuthorization((Callable<Void>) () -> {
+      commandContext.runWithoutAuthorization((Callable<Void>) () -> {
         ExternalTaskQueryImpl query = new ExternalTaskQueryImpl();
         query.processInstanceIdIn(collectedProcessInstanceIds.toArray(new String[0]));
         collectedIds.addAll(query.listIds());
@@ -90,13 +99,36 @@ public abstract class AbstractSetExternalTaskRetriesCmd<T> implements Command<T>
       });
     }
 
-    return new ArrayList<>(collectedIds);
+    List<String> ids = new ArrayList<>(collectedIds);
+    if (mappings != null) {
+      groupByDeploymentId(ids, commandContext.getExternalTaskManager()::findExternalTaskById, e -> getDeploymentId(commandContext, e), ExternalTaskEntity::getId)
+        .entrySet().stream()
+        .map(e -> new DeploymentMappingInfo(e.getKey(), e.getValue().size()))
+        .forEach(mappings::add);
+    }
+
+    return ids;
+  }
+
+  protected String getDeploymentId(CommandContext commandContext, ExternalTaskEntity externalTask) {
+    List<String> ids = commandContext.getDeploymentManager().findDeploymentIdsByProcessInstances(
+        Arrays.asList(externalTask.getProcessInstanceId()));
+    return ids.isEmpty() ? null : ids.get(0);
+  }
+
+  protected <S extends DbEntity> Map<String, List<String>> groupByDeploymentId(List<String> ids, Function<String, S> idMapperFunction,
+      Function<? super S, ? extends String> deploymentIdFunction, Function<? super S, ? extends String> entityIdFunction) {
+    return ids.stream().map(idMapperFunction)
+        .filter(Objects::nonNull)
+        .filter(e -> deploymentIdFunction.apply(e) != null)
+        .collect(Collectors.groupingBy(deploymentIdFunction,
+            Collectors.mapping(entityIdFunction, Collectors.toList())));
   }
 
   protected void writeUserOperationLog(CommandContext commandContext, int numInstances,
                                        boolean async) {
 
-    List<PropertyChange> propertyChanges = new ArrayList<PropertyChange>();
+    List<PropertyChange> propertyChanges = new ArrayList<>();
     propertyChanges.add(new PropertyChange("nrOfInstances", null, numInstances));
     propertyChanges.add(new PropertyChange("async", null, async));
     propertyChanges.add(new PropertyChange("retries", null, builder.getRetries()));

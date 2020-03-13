@@ -84,7 +84,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(processIds, null, TESTING_INSTANCE_DELETE);
 
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -104,7 +104,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(processIds, null, TESTING_INSTANCE_DELETE);
 
-    createAndExecuteSeedJobs(batch.getSeedJobDefinitionId(), 2);
+    executeSeedJobs(batch, 2);
     executeBatchJobs(batch);
 
     // then
@@ -115,7 +115,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     // cleanup
     if (!testRule.isHistoryLevelNone()) {
       batch = historyService.deleteHistoricProcessInstancesAsync(processIds, null);
-      createAndExecuteSeedJobs(batch.getSeedJobDefinitionId(), 2);
+      executeSeedJobs(batch, 2);
       executeBatchJobs(batch);
     }
   }
@@ -130,7 +130,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(processIds, TESTING_INSTANCE_DELETE);
 
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -150,7 +150,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(processIds, null, TESTING_INSTANCE_DELETE);
 
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     // then
@@ -198,7 +198,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(null, processInstanceQuery, TESTING_INSTANCE_DELETE);
 
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -219,7 +219,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(processInstanceQuery, TESTING_INSTANCE_DELETE);
 
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -240,7 +240,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(null, processInstanceQuery, null);
 
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -264,7 +264,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     Batch batch = runtimeService.deleteProcessInstancesAsync(null, null,
         historicProcessInstanceQuery, "", false, false);
 
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -291,7 +291,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     Batch batch = runtimeService.deleteProcessInstancesAsync(null, processInstanceQuery,
         historicProcessInstanceQuery, "", false, false);
 
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -348,7 +348,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
 
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(processIds, null, TESTING_INSTANCE_DELETE, true);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -377,7 +377,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
 
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(processIds, null, TESTING_INSTANCE_DELETE, false, true);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -410,7 +410,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
 
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(processIds, null, TESTING_INSTANCE_DELETE, false, false);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -440,7 +440,7 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
 
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(processIds, TESTING_INSTANCE_DELETE);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     // then
@@ -467,10 +467,9 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     // when
     Batch batch = runtimeService.deleteProcessInstancesAsync(processInstanceIds, null, "test_reason");
 
-    String seedJobDefinitionId = batch.getSeedJobDefinitionId();
     // seed jobs
     int expectedSeedJobsCount = 5;
-    createAndExecuteSeedJobs(seedJobDefinitionId, expectedSeedJobsCount);
+    executeSeedJobs(batch, expectedSeedJobsCount);
 
     // then
     List<Job> jobs = managementService.createJobQuery().jobDefinitionId(batch.getBatchJobDefinitionId()).list();
@@ -542,18 +541,5 @@ public class RuntimeServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
       processInstanceIds.add(processInstance.getId());
     }
     return processInstanceIds;
-  }
-
-  private void createAndExecuteSeedJobs(String seedJobDefinitionId, int expectedSeedJobsCount) {
-    for (int i = 0; i <= expectedSeedJobsCount; i++) {
-      Job seedJob = managementService.createJobQuery().jobDefinitionId(seedJobDefinitionId).singleResult();
-      if (i != expectedSeedJobsCount) {
-        assertNotNull(seedJob);
-        managementService.executeJob(seedJob.getId());
-      } else {
-        //the last seed job should not trigger another seed job
-        assertNull(seedJob);
-      }
-    }
   }
 }

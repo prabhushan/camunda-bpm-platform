@@ -24,6 +24,7 @@ import org.camunda.bpm.engine.history.HistoricTaskInstance;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.camunda.bpm.engine.runtime.Job;
 import org.camunda.bpm.engine.test.ProcessEngineRule;
+import org.camunda.bpm.engine.test.api.runtime.BatchHelper;
 import org.camunda.bpm.engine.test.util.ProcessEngineTestRule;
 import org.junit.After;
 
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -47,6 +49,8 @@ public abstract class AbstractAsyncOperationsTest {
   protected RuntimeService runtimeService;
   protected ManagementService managementService;
   protected HistoryService historyService;
+
+  protected BatchHelper helper;
 
   protected ProcessEngineConfigurationImpl engineConfiguration;
 
@@ -80,11 +84,29 @@ public abstract class AbstractAsyncOperationsTest {
     return jobs.stream().filter(j -> deploymentId.equals(j.getDeploymentId())).map(Job::getId).collect(Collectors.toList());
   }
 
+  public void completeSeedJobs(Batch batch) {
+    while (getSeedJob(batch) != null) {
+      executeSeedJob(batch);
+    }
+  }
+
   protected void executeSeedJob(Batch batch) {
-    String seedJobDefinitionId = batch.getSeedJobDefinitionId();
-    Job seedJob = managementService.createJobQuery().jobDefinitionId(seedJobDefinitionId).singleResult();
+    Job seedJob = getSeedJob(batch);
     assertNotNull(seedJob);
     managementService.executeJob(seedJob.getId());
+  }
+
+  protected void executeSeedJobs(Batch batch, int expectedSeedJobsCount) {
+    for (int i = 0; i < expectedSeedJobsCount; i++) {
+      executeSeedJob(batch);
+    }
+    assertNull(getSeedJob(batch));
+  }
+
+  protected Job getSeedJob(Batch batch) {
+    String seedJobDefinitionId = batch.getSeedJobDefinitionId();
+    Job seedJob = managementService.createJobQuery().jobDefinitionId(seedJobDefinitionId).singleResult();
+    return seedJob;
   }
 
   /**

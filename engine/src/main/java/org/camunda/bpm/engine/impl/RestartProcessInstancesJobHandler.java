@@ -16,11 +16,7 @@
  */
 package org.camunda.bpm.engine.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-
 import org.camunda.bpm.engine.batch.Batch;
 import org.camunda.bpm.engine.impl.batch.AbstractBatchJobHandler;
 import org.camunda.bpm.engine.impl.batch.BatchJobConfiguration;
@@ -44,16 +40,6 @@ public class RestartProcessInstancesJobHandler extends AbstractBatchJobHandler<R
   @Override
   public String getType() {
     return Batch.TYPE_PROCESS_INSTANCE_RESTART;
-  }
-
-  @Override
-  protected Map<String, List<String>> getProcessIdsPerDeployment(CommandContext commandContext, List<String> processIds,
-      RestartProcessInstancesBatchConfiguration configuration) {
-    String processDefinitionId = configuration.getProcessDefinitionId();
-    String deploymentId = commandContext.getProcessEngineConfiguration()
-        .getDeploymentCache().findDeployedProcessDefinitionById(processDefinitionId)
-        .getDeploymentId();
-    return Collections.singletonMap(deploymentId, new ArrayList<>(processIds));
   }
 
   @Override
@@ -111,7 +97,7 @@ public class RestartProcessInstancesJobHandler extends AbstractBatchJobHandler<R
   @Override
   protected RestartProcessInstancesBatchConfiguration createJobConfiguration(RestartProcessInstancesBatchConfiguration configuration,
       List<String> processIdsForJob) {
-    return new RestartProcessInstancesBatchConfiguration(processIdsForJob, configuration.getInstructions(), configuration.getProcessDefinitionId(),
+    return new RestartProcessInstancesBatchConfiguration(processIdsForJob, null, configuration.getInstructions(), configuration.getProcessDefinitionId(),
         configuration.isInitialVariables(), configuration.isSkipCustomListeners(), configuration.isSkipIoMappings(), configuration.isWithoutBusinessKey());
   }
 

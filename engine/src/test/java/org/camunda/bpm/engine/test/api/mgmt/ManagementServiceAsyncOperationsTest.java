@@ -90,7 +90,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
   public void testSetJobsRetryAsyncWithJobList() throws Exception {
     //when
     Batch batch = managementService.setJobRetriesAsync(ids, RETRIES);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     // then
@@ -121,7 +121,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
   public void testSetJobsRetryAsyncWithProcessList() throws Exception {
     //when
     Batch batch = managementService.setJobRetriesAsync(processInstanceIds, (ProcessInstanceQuery) null, RETRIES);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     // then
@@ -142,7 +142,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
 
     // when
     Batch batch = managementService.setJobRetriesAsync(processInstanceIds, (ProcessInstanceQuery) null, RETRIES);
-    executeSeedJob(batch);
+    executeSeedJobs(batch, 2);
     // then batch jobs with different deployment ids exist
     List<Job> batchJobs = managementService.createJobQuery().jobDefinitionId(batch.getBatchJobDefinitionId()).list();
     assertThat(batchJobs.size(), is(2));
@@ -188,7 +188,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
 
     //when
     Batch batch = managementService.setJobRetriesAsync(ids, RETRIES);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     //then
@@ -204,7 +204,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
 
     //when
     Batch batch = managementService.setJobRetriesAsync(processInstanceIds, (ProcessInstanceQuery) null, RETRIES);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     //then
@@ -221,7 +221,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
 
     //when
     Batch batch = managementService.setJobRetriesAsync(ids, query, RETRIES);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     // then
@@ -238,7 +238,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
 
     //when
     Batch batch = managementService.setJobRetriesAsync(processInstanceIds, query, RETRIES);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     // then
@@ -254,7 +254,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
 
     //when
     Batch batch = managementService.setJobRetriesAsync(query, RETRIES);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     // then
@@ -270,7 +270,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
 
     //when
     Batch batch = managementService.setJobRetriesAsync(null, query, RETRIES);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     // then
@@ -289,7 +289,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
     //when
     Batch batch = managementService.setJobRetriesAsync(null, null,
         historicProcessInstanceQuery, RETRIES);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     // then
@@ -312,7 +312,7 @@ public class ManagementServiceAsyncOperationsTest extends AbstractAsyncOperation
     //when
     Batch batch = managementService.setJobRetriesAsync(null, query,
         historicProcessInstanceQuery, RETRIES);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     // then

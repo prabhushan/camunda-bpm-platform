@@ -98,7 +98,7 @@ public class HistoryServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     //when
     Batch batch = historyService.deleteHistoricProcessInstancesAsync(historicProcessInstances, TEST_REASON);
 
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     // then
@@ -120,7 +120,7 @@ public class HistoryServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
 
     // when
     Batch batch = historyService.deleteHistoricProcessInstancesAsync(historicProcessInstances, TEST_REASON);
-    executeSeedJob(batch);
+    executeSeedJobs(batch, 2);
     // then batch jobs with different deployment ids exist
     List<Job> batchJobs = managementService.createJobQuery().jobDefinitionId(batch.getBatchJobDefinitionId()).list();
     assertThat(batchJobs.size(), is(2));
@@ -162,7 +162,7 @@ public class HistoryServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
 
     //when
     Batch batch = historyService.deleteHistoricProcessInstancesAsync(processInstanceIds, TEST_REASON);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     //then
@@ -177,7 +177,7 @@ public class HistoryServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
         .processInstanceId(historicProcessInstances.get(0));
     Batch batch = historyService.deleteHistoricProcessInstancesAsync(
         historicProcessInstances.subList(1, historicProcessInstances.size()), query, TEST_REASON);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
 
     //when
     List<Exception> exceptions = executeBatchJobs(batch);
@@ -195,7 +195,7 @@ public class HistoryServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
     HistoricProcessInstanceQuery query = historyService.createHistoricProcessInstanceQuery()
         .processInstanceIds(new HashSet<>(historicProcessInstances));
     Batch batch = historyService.deleteHistoricProcessInstancesAsync(query, TEST_REASON);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
 
     //when
     List<Exception> exceptions = executeBatchJobs(batch);
@@ -228,7 +228,7 @@ public class HistoryServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
 
     //when
     Batch batch = historyService.deleteHistoricProcessInstancesAsync(query, TEST_REASON);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     executeBatchJobs(batch);
 
     //then
@@ -239,7 +239,7 @@ public class HistoryServiceAsyncOperationsTest extends AbstractAsyncOperationsTe
   public void testDeleteHistoryProcessInstancesAsyncWithoutDeleteReason() throws Exception {
     //when
     Batch batch = historyService.deleteHistoricProcessInstancesAsync(historicProcessInstances, null);
-    executeSeedJob(batch);
+    completeSeedJobs(batch);
     List<Exception> exceptions = executeBatchJobs(batch);
 
     //then

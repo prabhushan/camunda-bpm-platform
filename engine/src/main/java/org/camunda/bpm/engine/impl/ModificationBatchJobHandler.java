@@ -16,11 +16,7 @@
  */
 package org.camunda.bpm.engine.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-
 import org.camunda.bpm.engine.batch.Batch;
 import org.camunda.bpm.engine.impl.batch.AbstractBatchJobHandler;
 import org.camunda.bpm.engine.impl.batch.BatchJobConfiguration;
@@ -41,16 +37,6 @@ public class ModificationBatchJobHandler extends AbstractBatchJobHandler<Modific
   @Override
   public String getType() {
     return Batch.TYPE_PROCESS_INSTANCE_MODIFICATION;
-  }
-
-  @Override
-  protected Map<String, List<String>> getProcessIdsPerDeployment(CommandContext commandContext, List<String> processIds,
-      ModificationBatchConfiguration configuration) {
-    String processDefinitionId = configuration.getProcessDefinitionId();
-    String deploymentId = commandContext.getProcessEngineConfiguration()
-        .getDeploymentCache().findDeployedProcessDefinitionById(processDefinitionId)
-        .getDeploymentId();
-    return Collections.singletonMap(deploymentId, new ArrayList<>(processIds));
   }
 
   @Override
@@ -89,7 +75,7 @@ public class ModificationBatchJobHandler extends AbstractBatchJobHandler<Modific
   @Override
   protected ModificationBatchConfiguration createJobConfiguration(ModificationBatchConfiguration configuration, List<String> processIdsForJob) {
     return new ModificationBatchConfiguration(
-        processIdsForJob,
+        processIdsForJob, null,
         configuration.getProcessDefinitionId(),
         configuration.getInstructions(),
         configuration.isSkipCustomListeners(),
